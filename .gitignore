@@ -25,6 +25,7 @@ venv/
 # Data files
 data/raw/      # Avoid committing raw datasets to Git
 data/interim/  # Optional, for partially processed data
+data/processed/  # Optional, for processed data
 *.csv
 *.tsv
 *.json
