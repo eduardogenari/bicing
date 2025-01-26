@@ -1,0 +1,59 @@
+# General system files
+.DS_Store
+Thumbs.db
+
+# Python-specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.egg-info/
+.eggs/
+*.log
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Virtual environment files
+.env/
+.venv/
+env/
+venv/
+*.env
+
+# Data files
+data/raw/      # Avoid committing raw datasets to Git
+data/interim/  # Optional, for partially processed data
+*.csv
+*.tsv
+*.json
+*.xls
+*.xlsx
+*.parquet
+*.feather
+*.h5
+*.zip
+*.tar.gz
+
+# Model files
+*.h5
+*.hdf5
+*.joblib
+*.pickle
+*.pkl
+
+# Output files
+reports/figures/
+reports/tables/
+
+# IDE-specific files
+.vscode/
+*.code-workspace
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Conda and Pip environment files
+*.conda
+*.lock
