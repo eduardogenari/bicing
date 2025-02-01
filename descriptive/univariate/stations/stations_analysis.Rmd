@@ -22,11 +22,13 @@ stations_data <- readRDS("stations_data.rds")
 summary_data <- summary(stations_data)
 print(summary_data)
 ```
+
 # boxplot
 ```{r}
 numeric_columns <- sapply(stations_data, is.numeric)
 boxplot(stations_data[, numeric_columns], main = "Boxplot of Numeric Columns")
 ```
+
 # histograms of numeric columns
 ```{r}
 for (col in names(stations_data)[numeric_columns]) {
@@ -37,4 +39,14 @@ for (col in names(stations_data)[numeric_columns]) {
   ggsave(paste0("histogram_", col, ".png"), plot = p)
 }
 ```
+
+# scatter plot for latitude and longitude
+
+# correlation matrix 
+
+# bar plot for categorical columns
+
+# density plots for numeric columns
+
+# missing values analysis
 
