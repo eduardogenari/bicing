@@ -58,3 +58,4 @@ reports/tables/
 # Conda and Pip environment files
 *.conda
 *.lock
+.Rproj.user

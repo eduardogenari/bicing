@@ -1,0 +1,38 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(dplyr)
+library(leaflet)
+```
+
+# load data
+```{r}
+stations_data <- readRDS("stations_data.rds")
+```
+
+# convert to sf object
+```{r}
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+```
+
+# calculate area
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data = stations_sf, 
+                   radius = 3, 
+                   color = "red", 
+                   fill = TRUE, 
+                   fillColor = "red", 
+                   fillOpacity = 1)
+```
+
+
+
