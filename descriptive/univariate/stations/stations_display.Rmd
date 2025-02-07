@@ -1,5 +1,5 @@
 ---
-title: "calculate Area occupied by stations"
+title: "plot stations and neighborhoods"
 author: "edu"
 date: "2025-02-01"
 output: html_document
@@ -7,31 +7,35 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
 library(sf)
 library(dplyr)
-library(leaflet)
-```
+library(ggplot2)
 
-# load data
-```{r}
+# Load data
 stations_data <- readRDS("stations_data.rds")
-```
+n_sf <- readRDS("n_data.rds")
 
-# convert to sf object
-```{r}
+# Convert to sf objects
 stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
-```
 
-# calculate area
-```{r}
-leaflet() %>%
-  addTiles() %>%
-  addCircleMarkers(data = stations_sf, 
-                   radius = 3, 
-                   color = "red", 
-                   fill = TRUE, 
-                   fillColor = "red", 
-                   fillOpacity = 1)
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white") +
+  geom_sf(data = stations_sf, color = "red", size = 1.5) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_neighborhoods.png", plot = plot, width = 10, height = 10)
+
+# Save the plot as a JPG file
+ggsave("stations_neighborhoods.jpg", plot = plot, width = 10, height = 10)
 ```
 
 
