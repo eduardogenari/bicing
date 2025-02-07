@@ -1,0 +1,35 @@
+library(sf)
+library(DBI)
+library(RPostgres)
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "proyecto_12",
+  host="proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com",
+  port=5432,
+  user="postgres",
+  password="proyecto12upc",
+)
+
+dbListTables(con)
+df <- dbGetQuery(con, "SELECT * FROM model_table_calc_stations_neighborhoods")
+
+
+#Verificacion de NAs y columnas no numericas:
+str(df)
+summary(df)
+
+colSums(is.na(df))
+colSums(is.nan(as.matrix(df)))
+cor(df, use = "pairwise.complete.obs")
+#alta correlacion entre población y poblacion de mujeres. También entre capacity y total_bike_output.
+library(car)
+df$population <- as.numeric(df$population)
+unique(df$population)
+#conversión a numérico porque no reconocía la varianza de population
+
+vif(lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df))
+#Solo me permitió calcular el vif habiendo quitado capacity y poblacion de mujeres, entiendo que por la colinealidad
+#(aparecía el error "there are aliased coefficients in the model")
+
+modelo_lm <- lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df)
+summary(modelo_lm)
