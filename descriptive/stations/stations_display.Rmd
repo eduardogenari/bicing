@@ -26,13 +26,13 @@ plot <- ggplot() +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
-    axis.text = element_text(),
-    axis.ticks = element_line(),
-    panel.grid = element_line()
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
   ) +
   labs(
-    title = "Bicing Stations in Barcelona",
-    caption = "Data source: Bicing and Barcelona Open Data"
+    title = "Bicing Stations in Barcelona"
   )
 
 # Save the plot as a PNG file

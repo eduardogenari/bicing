@@ -200,3 +200,90 @@ colnames(stations_total_input_output) <- c("station_id", "total_input_num_bikes"
 head(station_totals, 10)
 ```
 
+
+
+
+# final stations_input_output
+```{r}
+# Filter the data for interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data, interval_type == "hours")
+
+# Aggregate the sums of input and output bikes available per station
+stations_input_output <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ station_id,
+                                   data = filtered_data,
+                                   FUN = sum)
+
+# Rename the columns for clarity
+colnames(stations_input_output) <- c("station_id", "total_input", "total_output")
+
+# Add a new column that sums total_input and total_output
+stations_input_output$total_input_output <- stations_input_output$total_input + stations_input_output$total_output
+
+# Add columns for daily averages
+stations_input_output$daily_avg_input <- stations_input_output$total_input / (365 * 2)
+stations_input_output$daily_avg_output <- stations_input_output$total_output / (365 * 2)
+stations_input_output$daily_avg_input_output <- stations_input_output$total_input_output / (365 * 2)
+
+# Print the first 10 lines of the new data frame
+head(stations_input_output, 10)
+```
+
+# final stations_input_output head
+```{r}
+# Order the data frame by total_input_num_bikes in descending order
+stations_input_output <- stations_input_output[order(-stations_input_output$total_input), ]
+
+# Print the first 10 lines of the ordered data frame
+head(stations_input_output, 10)
+```
+
+
+
+
+
+
+```{r}
+# Order the data frame by daily_avg_input_output in descending order
+stations_input_output <- stations_input_output[order(-stations_input_output$daily_avg_input_output), ]
+
+# Select the top 50 stations
+top_50_stations <- head(stations_input_output, 50)
+
+# Draw a bar graph with station_id and daily_avg_input_output
+library(ggplot2)
+
+ggplot(top_50_stations, aes(x = reorder(station_id, -daily_avg_input_output), y = daily_avg_input_output)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  theme_minimal() +
+  labs(
+    title = "Top 50 Most Used Stations by Daily Average Input-Output",
+    x = "Station ID",
+    y = "Daily Average Input-Output"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+
+```{r}
+# Plot histograms for total_input and total_output
+ggplot(stations_input_output, aes(x = total_input)) +
+  geom_histogram(binwidth = 5000, fill = "blue", alpha = 0.7) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Input",
+    x = "Total Input",
+    y = "Frequency"
+  )
+
+ggplot(stations_input_output, aes(x = total_output)) +
+  geom_histogram(binwidth = 5000, fill = "red", alpha = 0.7) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of Total Output",
+    x = "Total Output",
+    y = "Frequency"
+  )
+```
+

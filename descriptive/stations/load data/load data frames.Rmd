@@ -1,0 +1,112 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(dplyr)
+```
+
+# LOAD stations_data
+```{r}
+stations_data <- readRDS("stations_data.rds")
+```
+
+# CHECK stations_data
+```{r}
+head(stations_data, 10)
+```
+
+
+
+
+
+
+# LOAD neighborhood
+```{r}
+n_sf <- readRDS("n_data.rds")
+```
+
+# LOAD stations_intervals_data
+```{r}
+stations_intervals_data <- readRDS("stations_intervals_data.rds")
+```
+
+# LOAD stations_input_output
+```{r}
+# Filter the data for interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data, interval_type == "hours")
+
+# Aggregate the sums of input and output bikes available per station
+stations_input_output <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ station_id,
+                                   data = filtered_data,
+                                   FUN = sum)
+
+# Rename the columns for clarity
+colnames(stations_input_output) <- c("station_id", "total_input", "total_output")
+
+# Add a new column that sums total_input and total_output
+stations_input_output$total_input_output <- stations_input_output$total_input + stations_input_output$total_output
+
+# Add columns for daily averages
+stations_input_output$daily_avg_input <- stations_input_output$total_input / (365 * 2)
+stations_input_output$daily_avg_output <- stations_input_output$total_output / (365 * 2)
+stations_input_output$daily_avg_input_output <- stations_input_output$total_input_output / (365 * 2)
+
+# Print the first 10 lines of the new data frame
+head(stations_input_output, 10)
+```
+
+
+
+
+# final stations_input_output head
+```{r}
+# Order the data frame by total_input_num_bikes in descending order
+stations_input_output <- stations_input_output[order(-stations_input_output$total_input), ]
+
+# Print the first 10 lines of the ordered data frame
+head(stations_input_output, 10)
+```
+
+
+# MERGE stations_data and stations_input_output
+```{r}
+# Perform a left join to combine stations_data and stations_input_output
+stations_info_use <- merge(stations_data, stations_input_output, by = "station_id", all.x = TRUE)
+
+# Print the first 10 lines of the new data frame
+head(stations_info_use, 10)
+```
+
+
+```{r}
+summary(stations_info_use)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+# Print the first 10 lines
+print(head(stations_intervals_data, 10))
+```
+
