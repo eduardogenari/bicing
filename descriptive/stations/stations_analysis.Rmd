@@ -1,0 +1,52 @@
+---
+title: "stations_analysis"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+```
+
+# load data
+```{r}
+stations_data <- readRDS("stations_data.rds")
+```
+
+# summary
+```{r}
+summary_data <- summary(stations_data)
+print(summary_data)
+```
+
+# boxplot
+```{r}
+numeric_columns <- sapply(stations_data, is.numeric)
+boxplot(stations_data[, numeric_columns], main = "Boxplot of Numeric Columns")
+```
+
+# histograms of numeric columns
+```{r}
+for (col in names(stations_data)[numeric_columns]) {
+  p <- ggplot(stations_data, aes(x = .data[[col]])) +
+    geom_histogram(binwidth = 10, fill = "blue", color = "black") +
+    ggtitle(paste("Histogram of", col)) +
+    theme_minimal()
+  ggsave(paste0("histogram_", col, ".png"), plot = p)
+}
+```
+
+# scatter plot for latitude and longitude
+
+# correlation matrix 
+
+# bar plot for categorical columns
+
+# density plots for numeric columns
+
+# missing values analysis
+

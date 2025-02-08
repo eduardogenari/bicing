@@ -1,0 +1,39 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(dplyr)
+```
+
+# load data
+```{r}
+stations_data <- readRDS("stations_data.rds")
+```
+
+# convert to sf object
+```{r}
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+```
+
+# calculate area
+```{r}
+hull <- st_convex_hull(st_union(stations_sf))
+area_sq_m <- st_area(hull)
+area_sq_km <- as.numeric(area_sq_m) / 1e6
+print(area_sq_km)
+```
+
+
+# calculate the proportion of the area occupied by stations relative to the total surface area of Barcelona
+```{r}
+total_surface_barcelona_km2 <- 101
+percentage_occupied <- (area_sq_km / total_surface_barcelona_km2) * 100
+print(percentage_occupied)
+```
+

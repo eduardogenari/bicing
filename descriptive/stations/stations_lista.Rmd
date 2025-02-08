@@ -1,0 +1,77 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(gridExtra)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+
+# Select required columns
+stations_data <- stations_data %>%
+  select(station_id, address, capacity, altitude)
+
+# Split the data into 3 columns
+stations_data <- stations_data %>%
+  mutate(row_num = row_number()) %>%
+  mutate(column = ceiling(row_num / 200))
+
+# Create a list of data frames for each column
+columns <- split(stations_data, stations_data$column)
+
+# Function to create a table grob for each column
+create_table_grob <- function(data) {
+  table <- tableGrob(
+    data %>% select(-row_num, -column),
+    rows = NULL,
+    theme = ttheme_minimal(
+      core = list(fg_params = list(fontface = c(rep("plain", nrow(data) * 3), "bold")))
+    )
+  )
+  return(table)
+}
+
+# Create table grobs for each column
+table_grobs <- lapply(columns, create_table_grob)
+
+# Arrange the table grobs in a grid
+grid <- marrangeGrob(table_grobs, ncol = 3, nrow = 1)
+
+# Save the grid as an image
+ggsave("stations_info.png", grid, width = 15, height = 20, dpi = 300)
+```
+
+# load data
+```{r}
+stations_data <- readRDS("stations_data.rds")
+```
+
+
+# convert to sf object
+```{r}
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+```
+
+# calculate area
+```{r}
+hull <- st_convex_hull(st_union(stations_sf))
+area_sq_m <- st_area(hull)
+area_sq_km <- as.numeric(area_sq_m) / 1e6
+print(area_sq_km)
+```
+
+
+# calculate the proportion of the area occupied by stations relative to the total surface area of Barcelona
+```{r}
+total_surface_barcelona_km2 <- 101
+percentage_occupied <- (area_sq_km / total_surface_barcelona_km2) * 100
+print(percentage_occupied)
+```
+
