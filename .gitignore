@@ -58,3 +58,14 @@ reports/tables/
 # Conda and Pip environment files
 *.conda
 *.lock
+
+# R data files
+*.rds
+
+# Image files
+*.jpg
+*.png
+
+# RStudio files
+.Rproj.user/
+*.Rproj
