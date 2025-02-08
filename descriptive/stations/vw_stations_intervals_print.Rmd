@@ -1,0 +1,202 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+
+# print
+```{r}
+
+# Print the first 10 lines
+print(head(vw_stations_intervals_data, 10))
+```
+
+
+# print
+```{r}
+
+summary(vw_stations_intervals_data)
+```
+
+```{r}
+summary(stations_data)
+```
+
+
+```{r}
+# Filter the data for station_id = 1 and interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data, 
+                        station_id == 42 & 
+                        interval_type == "hours" & 
+                        interval_from >= as.POSIXct("2024-01-01 10:00:00") & 
+                        interval_to <= as.POSIXct("2024-01-01 11:00:00"))
+
+# Calculate the average input and output bikes available per hour
+average_input <- mean(filtered_data$input_num_bikes_available)
+average_output <- mean(filtered_data$output_num_bikes_available)
+
+# Print the results
+cat("Average input bikes available per hour:", average_input, "\n")
+cat("Average output bikes available per hour:", average_output, "\n")
+```
+
+
+```{r}
+# Filter the data for station_id = 42 and interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 42 &
+                        interval_type == "hours")
+
+# Convert interval_from to Date
+filtered_data$interval_date <- as.Date(filtered_data$interval_from)
+
+# Calculate the daily average input and output bikes available
+daily_averages <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ interval_date, 
+                            data = filtered_data, 
+                            FUN = mean)
+
+# Print the results
+print(daily_averages)
+```
+
+
+```{r}
+# Filter the data for station_id = 42 and interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 42 &
+                        interval_type == "hours")
+
+# Convert interval_from to Date
+filtered_data$interval_date <- as.Date(filtered_data$interval_from)
+
+# Calculate the total input and output bikes available per day
+daily_totals <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ interval_date,
+                          data = filtered_data,
+                          FUN = sum)
+
+# Print the results
+print(daily_totals)
+```
+
+
+```{r}
+# Filter the data for station_id = 42, interval_type = "hours", and the first day
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 42 &
+                        interval_type == "hours" &
+                        interval_from >= as.POSIXct("2023-02-01 00:00:00") &
+                        interval_to < as.POSIXct("2023-02-02 00:00:00"))
+
+# Show the first 24 records
+head(filtered_data, 24)
+```
+
+
+# first day
+```{r}
+# Filter the data for station_id = 42, interval_type = "hours", and the first day
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 42 &
+                        interval_type == "hours" &
+                        interval_from >= as.POSIXct("2023-02-01 00:00:00") &
+                        interval_to < as.POSIXct("2023-02-02 00:00:00"))
+
+# Calculate the sum of input and output bikes available
+total_input <- sum(filtered_data$input_num_bikes_available)
+total_output <- sum(filtered_data$output_num_bikes_available)
+
+# Calculate the average per hour of input and output bikes available
+average_input_per_hour <- mean(filtered_data$input_num_bikes_available)
+average_output_per_hour <- mean(filtered_data$output_num_bikes_available)
+
+# Print the results
+cat("Total input bikes available during the day:", total_input, "\n")
+cat("Total output bikes available during the day:", total_output, "\n")
+cat("Average input bikes available per hour:", average_input_per_hour, "\n")
+cat("Average output bikes available per hour:", average_output_per_hour, "\n")
+```
+
+
+```{r}
+# Filter the data for station_id = 42 and interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 42 &
+                        interval_type == "hours" &
+                        interval_from >= as.POSIXct("2023-01-01 00:00:00") &
+                        interval_to < as.POSIXct("2025-01-01 00:00:00"))
+
+# Calculate the total sum of input and output bikes available
+total_input <- sum(filtered_data$input_num_bikes_available)
+total_output <- sum(filtered_data$output_num_bikes_available)
+
+# Convert interval_from to Date
+filtered_data$interval_date <- as.Date(filtered_data$interval_from)
+
+# Calculate the daily average input and output bikes available
+daily_averages <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ interval_date,
+                            data = filtered_data,
+                            FUN = mean)
+
+# Calculate the overall daily averages
+average_input_per_day <- mean(daily_averages$input_num_bikes_available)
+average_output_per_day <- mean(daily_averages$output_num_bikes_available)
+
+# Print the results
+cat("Total input bikes available during the period:", total_input, "\n")
+cat("Total output bikes available during the period:", total_output, "\n")
+cat("Average input bikes available per day:", average_input_per_day, "\n")
+cat("Average output bikes available per day:", average_output_per_day, "\n")
+```
+
+
+
+```{r}
+# Filter the data for station_id = 42 and interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data,
+                        station_id == 1 &
+                        interval_type == "hours" &
+                        interval_from >= as.POSIXct("2023-01-01 00:00:00") &
+                        interval_to < as.POSIXct("2025-01-01 00:00:00"))
+
+# Calculate the total sum of input and output bikes available
+total_input <- sum(filtered_data$input_num_bikes_available)
+total_output <- sum(filtered_data$output_num_bikes_available)
+
+# Convert interval_from to Date
+filtered_data$interval_date <- as.Date(filtered_data$interval_from)
+
+# Calculate the daily sum of input and output bikes available
+daily_totals <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ interval_date,
+                          data = filtered_data,
+                          FUN = sum)
+
+# Calculate the overall daily averages
+average_input_per_day <- mean(daily_totals$input_num_bikes_available)
+average_output_per_day <- mean(daily_totals$output_num_bikes_available)
+
+# Print the results
+cat("Total input bikes available during the period:", total_input, "\n")
+cat("Total output bikes available during the period:", total_output, "\n")
+cat("Average input bikes available per day:", average_input_per_day, "\n")
+cat("Average output bikes available per day:", average_output_per_day, "\n")
+```
+
+
+```{r}
+# Filter the data for interval_type = "hours"
+filtered_data <- subset(vw_stations_intervals_data, interval_type == "hours")
+
+# Aggregate the sums of input and output bikes available per station
+stations_total_input_output <- aggregate(cbind(input_num_bikes_available, output_num_bikes_available) ~ station_id,
+                            data = filtered_data,
+                            FUN = sum)
+
+# Rename the columns for clarity
+colnames(stations_total_input_output) <- c("station_id", "total_input_num_bikes", "total_output_num_bikes")
+
+# Print the first 10 lines of the new data frame
+head(station_totals, 10)
+```
+
