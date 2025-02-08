@@ -1,0 +1,13 @@
+CREATE TABLE model_table_calc_stations_neighborhoods AS
+SELECT 
+    neighborhood_code,
+    SUM(station_bikes_output) AS total_bikes_output,
+    SUM(neighborhood_women) AS total_women,
+    MAX(neighborhood_population) AS population,
+    MAX(neighborhood_average_age) AS avg_age,
+    MAX(neighborhood_gross_income) AS avg_income,
+    MAX(neighborhood_avg_altitude) AS avg_altitude,
+    MAX(neighborhood_capacity) AS avg_capacity
+FROM public.calc_stations_neighborhoods_consolidated
+GROUP BY neighborhood_code 
+ORDER BY neighborhood_code;
