@@ -1,0 +1,149 @@
+library(sf)
+library(DBI)
+library(RPostgres)
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "proyecto_12",
+  host="proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com",
+  port=5432,
+  user="postgres",
+  password="proyecto12upc",
+)
+
+dbListTables(con)
+df <- dbGetQuery(con, "SELECT * FROM calc_neighborhoods_consolidated")
+
+## Normalidad total_stations_bikes_output
+
+```{r}
+hist(df$total_stations_bikes_output)
+
+mm<-mean(df$total_stations_bikes_output);ss<-sd(df$total_stations_bikes_output)
+mm;ss
+hist(df$total_stations_bikes_output,freq=F)
+curve(dnorm(x,mm,ss),col="red",add=T)
+shapiro.test(df$total_stations_bikes_output) # No hay normalidad
+
+## Descriptiva fare, dist, concen, passen
+
+```{r}
+names(df)
+selcol<-c(1:5,7)
+summary(df[,selcol])
+```
+
+## Variables más relacionadas con total_stations_bikes_output
+
+```{r}
+plot(df[,selcol])
+# Mejor
+plot(df[,c(7,5,6,15)])  # Herramienta gráfica
+# Calcular coeficiente correlación lineal (Pearson)
+cor(df[,c(7,5,6,15)])
+
+``````
+
+
+#Verificacion de NAs y columnas no numericas:
+str(df)
+summary(df)
+
+colSums(is.na(df))
+colSums(is.nan(as.matrix(df)))
+cor(df, use = "pairwise.complete.obs")
+#alta correlacion entre población y poblacion de mujeres. También entre capacity y total_bike_output.
+install.packages("car")
+library(car)
+df$population <- as.numeric(df$population)
+unique(df$population)
+#conversión a numérico porque no reconocía la varianza de population
+
+vif(lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df))
+#Solo me permitió calcular el vif habiendo quitado capacity y poblacion de mujeres, entiendo que por la colinealidad
+#(aparecía el error "there are aliased coefficients in the model")
+
+modelo_lm <- lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df)
+summary(modelo_lm)
+
+
+###Analisis modelo
+
+summary(df)
+warnings()
+cor(df[, c(1,5,6,7,8,12,15)])
+plot(df[,c(1,5,6,7,8,12,15)])
+#la variable population no aparece en las correlaciones
+class(df$population)
+df$population <- as.numeric(df$population)
+#despues de convertir population a numerica, se pudieron hacer todas las correlaciones
+#sapply(df[, c(1, 5, 6, 7, 8, 12, 15)], function(x) sd(x, na.rm = TRUE))
+
+
+
+library(FactoMineR)
+df$neighborhood_code <- as.factor(df$neighborhood_code)
+df_numeric <- df[, sapply(df, is.numeric)]
+df_subset <- df[, c(1, 5, 6, 7, 8, 12, 15)]
+
+# Convertir la variable de agrupación a factor
+df_subset$neighborhood_code <- as.factor(df_subset$neighborhood_code)
+
+# Ejecutar condes() usando la primera columna (la variable de agrupación)
+condes(df_subset, 1)
+modelo <- lm(total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df)
+summary(modelo)
+
+
+library(chemometrics)
+
+# Usamos las columnas 2 a 7 (las variables continuas)
+res.mout <- Moutlier(df_subset[, 2:7], 0.999)
+
+# Configuramos el gráfico para una sola figura
+par(mfrow = c(1, 1))
+
+# Graficamos la distancia de Mahalanobis (md) vs. la distancia robusta (rd)
+plot(res.mout$md, res.mout$rd, pch = 19,
+     xlab = "Distancia de Mahalanobis", ylab = "Distancia robusta",
+     main = "Detección de Outliers")
+
+# Dibujamos las líneas de corte (umbral) en ambos ejes
+abline(v = res.mout$cutoff, col = "red")
+abline(h = res.mout$cutoff, col = "red")
+
+# Identificamos los índices de las observaciones consideradas outliers
+ll <- which((res.mout$md > res.mout$cutoff) & (res.mout$rd > res.mout$cutoff))
+cat("Número de outliers detectados:", length(ll), "\n")
+print(ll)
+
+# Eliminamos los outliers del subconjunto (creamos un nuevo data frame sin ellos)
+df_subset_clean <- df_subset[-ll, ]
+```
+
+
+```{r}
+m0 <- lm( total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+summary(m0)
+vif(m0)
+#Un vif mayor a 10 indica una colinealidad severa
+
+# 95% IC con el modelo m0r  education = 15 age = 30
+predict( m0 , newdata=data.frame(education = 15, age = 30), interval="prediction")
+
+# Transformaciones para encajar en las hipótesis del modelo lineal
+par( mfrow=c(2,2))
+plot( m0, id.n=0 )
+par( mfrow=c(1,1))
+influence.measures(m0)
+
+library(MASS)
+
+boxcox(total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+#verificacion de valores faltantes:
+colSums(is.na(df_subset_clean))
+any(df_subset_clean$total_stations_bikes_output <= 0)
+summary(df_subset_clean)
+boxTidwell(log(total_stations_bikes_output) ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+m1 <- lm(log(total_stations_bikes_output) ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+summary(m1)
+vif(m1)
