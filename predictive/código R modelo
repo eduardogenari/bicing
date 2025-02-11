@@ -128,7 +128,7 @@ vif(m0)
 #Un vif mayor a 10 indica una colinealidad severa
 
 # 95% IC con el modelo m0r  education = 15 age = 30
-predict( m0 , newdata=data.frame(education = 15, age = 30), interval="prediction")
+#predict( m0 , newdata=data.frame(education = 15, age = 30), interval="prediction")
 
 # Transformaciones para encajar en las hipótesis del modelo lineal
 par( mfrow=c(2,2))
@@ -138,12 +138,112 @@ influence.measures(m0)
 
 library(MASS)
 
-boxcox(total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+boxcox(total_stations_bikes_output ~ population  + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
 #verificacion de valores faltantes:
 colSums(is.na(df_subset_clean))
 any(df_subset_clean$total_stations_bikes_output <= 0)
 summary(df_subset_clean)
-boxTidwell(log(total_stations_bikes_output) ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
-m1 <- lm(log(total_stations_bikes_output) ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+boxTidwell(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+summary(df_subset_clean)
+#No permite ejecutar el boxTidwell, probablemente por la elevada dispersion en algunas variables
+normalize_minmax <- function(x) {
+  scaled_x <- (x - min(x)) / (max(x) - min(x))  # Normalización Min-Max
+  return (scaled_x + 1e-6)  # Desplazamos para evitar valores 0
+}
+
+df_scaled <- df_subset_clean  # Copia el dataframe original
+
+# Aplicamos normalización Min-Max a todas las variables numéricas excepto total_stations_bikes_output
+#df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "total_stations_bikes_output"] <- 
+ # lapply(df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "total_stations_bikes_output"], normalize_minmax)
+m1 <- lm(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
 summary(m1)
 vif(m1)
+
+par(mfrow=c(2,2))
+plot( m1, id.n=5 )
+par(mfrow=c(1,1))
+
+boxTidwell(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+summary(df_scaled)
+
+
+
+#eliminamos la variable perc_women, basados en que no era significativa en el primer modelo
+#Aplicamos las transformaciones a income y altitud, sugeridos por boxTidwell
+df_subset_clean$gross_income_trans <- df_subset_clean$gross_income^(-0.74953)
+df_subset_clean$stations_avg_altitude_trans <- df_subset_clean$stations_avg_altitude^(0.17449)
+m1_trans <- lm(log(total_stations_bikes_output) ~ population + average_age +
+                 gross_income_trans + stations_avg_altitude_trans,
+               data = df_subset_clean)
+summary(m1_trans)
+
+par(mfrow=c(2,2))
+plot( m1_trans, id.n=5 )
+par(mfrow=c(1,1))
+#Las observaciones 3,14,27,35,46 pueden ser influyentes
+df_subset_clean[c(35, 46, 14, 57), ]
+cooksd <- cooks.distance(m1_trans)
+plot(cooksd, type="h", main="Distancia de Cook", ylab="Cook’s Distance")
+abline(h = 1, col="red", lty=2)
+
+residualPlots( m1_trans )
+avPlots(m1, id=list(method=list(cooks.distance(m1),"x"), n = 5))
+crPlots(m1)
+marginalModelPlots(m1)
+marginalModelPlots(m0)
+#Lo ideal es que los datos y el modelo coincidan en estas graficas
+
+
+#Se hará una transformacion polinomial ala variable gross_income, manteniendo la tranformacion de stations_avg_altitude
+m2 <- lm(log(total_stations_bikes_output) ~ population + average_age + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_clean)
+
+summary(m2)
+vif(m2)
+avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
+
+par(mfrow=c(2,2))
+plot( m2, id.n=0 )
+par(mfrow=c(1,1))
+
+residualPlots( m2 )
+avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
+marginalModelPlots(m2)
+
+library(effects)
+plot(allEffects(m2, transformation=list(link=log, inverse=exp)))  # Axes name for Y has to be reset to wage
+
+llres<-which(abs(rstudent(m2))>3);llres
+llhat<-which(hatvalues(m2)>3*length(coef(m2))/nrow(df_subset_clean));llhat
+# Cook's distance es el indicador de influencia
+llcoo <- Boxplot(cooks.distance(m2), id=list(n=2, labels=row.names(model.frame(m2))))
+influencePlot(m2)
+
+
+print(llres)
+#Aparecen como observaciones influyentes la fila 12 y 14
+df_subset_clean[llres,]
+ll<-which(row.names(df_subset_clean) %in% c("12", "14"));ll
+df_subset_clean[ll,]
+df_subset_cleanm3<-df_subset_clean[-ll,]
+#En df_subset_cleanm3 se eliminan las observaciones influyentes 12 y 14
+m3 <- lm(log(total_stations_bikes_output) ~ population + average_age + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_cleanm3)
+summary(m3)
+
+par(mfrow=c(2,2))
+plot( m3, id.n=0 )
+par(mfrow=c(1,1))
+
+# El modelo m3 consigue un adjusted R-squared de 0,8373, aunque residuals vs Fitted presenta aun una curvatura
+residualPlots( m3 )
+avPlots(m3, id=list(method=list(cooks.distance(m3),"x"), n = 7))
+marginalModelPlots(m3)
+library(effects)
+plot(allEffects(m3))
+
+llres<-which(abs(rstudent(m3))>3);llres
+llhat<-which(hatvalues(m3)>3*length(coef(m3))/nrow(df));llhat
+llcoo<-Boxplot(cooks.distance(m3), id=list(n=2,labels=row.names(df_subset_cleanm3)))
+influencePlot(m3, id=list(n=5,method="noteworthy"))
+
+names(df_subset_cleanm3)
