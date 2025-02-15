@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(sf)
 library(dplyr)
 library(ggplot2)
-library(grid)
 
 # Convert stations_info_use to sf object
 stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
@@ -21,35 +20,33 @@ stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
 plot_daily_avg_input_output <- ggplot() +
   geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
   geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = "white") +
-  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
-  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  guides(
+    color = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  labs(
-    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output"
-  ) +
-  annotation_custom(
-    grob = textGrob(
-      label = "Data source: Bicing and Barcelona Open Data",
-      x = unit(1, "npc") - unit(1, "lines"),
-      y = unit(0, "npc") + unit(1, "lines"),
-      just = c("right", "bottom"),
-      gp = gpar(fontsize = 8, col = "black")
-    )
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.justification = "right",
+    legend.box.just = "right",
+    legend.margin = margin(t = -30)
   )
 
 # Save the plot as a PNG file
-ggsave("stations_daily_avg_input_output.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_use_600.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 
 # Save the plot as a JPG file
-ggsave("stations_daily_avg_input_output.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_use_600.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 ```
+
 
 
 # mapa stations use - clean TOP 50
@@ -76,34 +73,23 @@ plot_daily_avg_input_output <- ggplot() +
   geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
   geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = "white") +
   geom_sf(data = top_50_stations_sf, aes(size = daily_avg_input_output), color = "#8B0000", fill = "#8B0000", shape = 21, alpha = 1) +
-  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
-  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output", guide = "none") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius", guide = "none") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  labs(
-    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output - Top 50 used station in solid red"
-  ) +
-  annotation_custom(
-    grob = textGrob(
-      label = "Data source: Bicing and Barcelona Open Data",
-      x = unit(1, "npc") - unit(1, "lines"),
-      y = unit(0, "npc") + unit(1, "lines"),
-      just = c("right", "bottom"),
-      gp = gpar(fontsize = 8, col = "black")
-    )
+    panel.grid.minor = element_blank(),
+    legend.position = "none"  # Ensure legends do not appear
   )
 
 # Save the plot as a PNG file
-ggsave("stations_daily_avg_input_output_50.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_50.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 
 # Save the plot as a JPG file
-ggsave("stations_daily_avg_input_output_50.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_50.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 ```
 
 
@@ -120,7 +106,7 @@ library(grid)
 # Convert stations_info_use to sf object
 stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
 
-# Identify the top 50 stations by daily_avg_input_output
+# Identify the top 100 stations by daily_avg_input_output
 top_100_stations <- stations_info_use %>%
   arrange(desc(daily_avg_input_output)) %>%
   head(100)
@@ -132,34 +118,23 @@ plot_daily_avg_input_output <- ggplot() +
   geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
   geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = "white") +
   geom_sf(data = top_100_stations_sf, aes(size = daily_avg_input_output), color = "#8B0000", fill = "#8B0000", shape = 21, alpha = 1) +
-  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
-  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output", guide = "none") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius", guide = "none") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  labs(
-    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output - Top 100 used station in solid red"
-  ) +
-  annotation_custom(
-    grob = textGrob(
-      label = "Data source: Bicing and Barcelona Open Data",
-      x = unit(1, "npc") - unit(1, "lines"),
-      y = unit(0, "npc") + unit(1, "lines"),
-      just = c("right", "bottom"),
-      gp = gpar(fontsize = 8, col = "black")
-    )
+    panel.grid.minor = element_blank(),
+    legend.position = "none"  # Ensure legends do not appear
   )
 
 # Save the plot as a PNG file
-ggsave("stations_daily_avg_input_output_100.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_100.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 
 # Save the plot as a JPG file
-ggsave("stations_daily_avg_input_output_100.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_100.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 ```
 
 
@@ -187,34 +162,23 @@ plot_daily_avg_input_output <- ggplot() +
   geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
   geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = "white") +
   geom_sf(data = top_150_stations_sf, aes(size = daily_avg_input_output), color = "#8B0000", fill = "#8B0000", shape = 21, alpha = 1) +
-  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
-  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output", guide = "none") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius", guide = "none") +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  labs(
-    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output - Top 150 used station in solid red"
-  ) +
-  annotation_custom(
-    grob = textGrob(
-      label = "Data source: Bicing and Barcelona Open Data",
-      x = unit(1, "npc") - unit(1, "lines"),
-      y = unit(0, "npc") + unit(1, "lines"),
-      just = c("right", "bottom"),
-      gp = gpar(fontsize = 8, col = "black")
-    )
+    panel.grid.minor = element_blank(),
+    legend.position = "none"  # Ensure legends do not appear
   )
 
 # Save the plot as a PNG file
-ggsave("stations_daily_avg_input_output_150.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_150.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 
 # Save the plot as a JPG file
-ggsave("stations_daily_avg_input_output_150.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_top_150.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 ```
 
 
@@ -246,34 +210,31 @@ plot_daily_avg_input_output <- ggplot() +
   geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
   geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = "white") +
   geom_sf(data = above_avg_stations_sf, aes(size = daily_avg_input_output), color = "#8B0000", fill = "#8B0000", shape = 21, alpha = 1) +
-  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
-  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Above Avg Use", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  guides(
+    color = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
   theme_minimal() +
   theme(
     panel.background = element_rect(fill = "white", color = "white"),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  labs(
-    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output - Above Average Use in Solid Red"
-  ) +
-  annotation_custom(
-    grob = textGrob(
-      label = "Data source: Bicing and Barcelona Open Data",
-      x = unit(1, "npc") - unit(1, "lines"),
-      y = unit(0, "npc") + unit(1, "lines"),
-      just = c("right", "bottom"),
-      gp = gpar(fontsize = 8, col = "black")
-    )
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.justification = "right",
+    legend.box.just = "right",
+    legend.margin = margin(t = -30)  # Adjust this value to reduce or increase the margin
   )
 
 # Save the plot as a PNG file
-ggsave("stations_daily_avg_input_output_above_avg.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_use_avg_600.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 
 # Save the plot as a JPG file
-ggsave("stations_daily_avg_input_output_above_avg.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+ggsave("stations_use_avg_600.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 600, bg = "white")
 ```
 
 

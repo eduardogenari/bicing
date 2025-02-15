@@ -181,7 +181,7 @@ ggsave("stations_altitude_600.jpg", plot = plot_altitude, width = 10, height = 1
 
 
 
-#altitud ajustes 2 leyenda abajo 600 - IMPROVE
+#altitud ajustes 2 leyenda abajo 600 - leyenda final
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(sf)
