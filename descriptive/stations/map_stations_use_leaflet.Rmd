@@ -5,7 +5,7 @@ date: "2025-02-01"
 output: html_document
 ---
 
-# mapa stations use - clean FINAL
+# mapa stations use - 1
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Load necessary libraries
@@ -13,9 +13,25 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 library(grid)
+library(leaflet)
+library(mapview)
+library(htmlwidgets)
 
 # Convert stations_info_use to sf object
 stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
+
+# Create a Leaflet map
+leaflet_map <- leaflet() %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data = n_sf, color = "black", weight = 0.5, fillColor = "white", fillOpacity = 0.5) %>%
+  addCircleMarkers(data = stations_sf,
+                   color = ~colorNumeric(palette = c("#FFCDD2", "#8B0000"), domain = stations_sf$daily_avg_input_output)(daily_avg_input_output),
+                   radius = ~scales::rescale(daily_avg_input_output, to = c(0.5, 5)),
+                   stroke = FALSE, fillOpacity = 0.7)
+
+# Save the Leaflet map as an HTML file
+saveWidget(leaflet_map, "stations_daily_avg_input_output.html", selfcontained = TRUE)
 
 # Create a plot with daily_avg_input_output represented by a red color scale and proportional use radius
 plot_daily_avg_input_output <- ggplot() +
@@ -50,6 +66,139 @@ ggsave("stations_daily_avg_input_output.png", plot = plot_daily_avg_input_output
 # Save the plot as a JPG file
 ggsave("stations_daily_avg_input_output.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
 ```
+
+
+
+
+
+# A. First, save the Leaflet map as an image using the mapview package: ESTA FUNCIONABA CON POCA RESO
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(leaflet)
+library(htmlwidgets)
+library(mapview)
+
+# Convert stations_info_use to sf object
+stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
+
+# Create a Leaflet map
+leaflet_map <- leaflet() %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data = n_sf, color = "black", weight = 0.5, fillColor = "white", fillOpacity = 0.2) %>%
+  addCircleMarkers(data = stations_sf,
+                   color = ~colorNumeric(palette = c("#FFCDD2", "#8B0000"), domain = stations_sf$daily_avg_input_output)(daily_avg_input_output),
+                   radius = ~scales::rescale(daily_avg_input_output, to = c(0.5, 5)),
+                   stroke = FALSE, fillOpacity = 0.7)
+
+# Save the Leaflet map as an HTML file
+saveWidget(leaflet_map, "stations_daily_avg_input_output.html", selfcontained = TRUE)
+
+# Save the Leaflet map as an image
+mapshot(leaflet_map, file = "leaflet_map.png")
+```
+
+
+
+# A. nueva
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(leaflet)
+library(htmlwidgets)
+library(mapview)
+
+# Convert stations_info_use to sf object
+stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
+
+# Create a Leaflet map
+leaflet_map <- leaflet() %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(data = n_sf, color = "black", weight = 0.5, fillColor = "white", fillOpacity = 0.2) %>%
+  addCircleMarkers(data = stations_sf,
+                   color = ~colorNumeric(palette = c("#FFCDD2", "#8B0000"), domain = stations_sf$daily_avg_input_output)(daily_avg_input_output),
+                   radius = ~scales::rescale(daily_avg_input_output, to = c(0.5, 5)),
+                   stroke = FALSE, fillOpacity = 0.7)
+
+# Save the Leaflet map as an HTML file
+saveWidget(leaflet_map, "stations_daily_avg_input_output.html", selfcontained = TRUE)
+
+# Save the Leaflet map as an image
+mapshot(leaflet_map, file = "leaflet_map.png")
+```
+
+
+
+
+
+# B. First, save the Leaflet map as an image using the mapview package:
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(png)
+library(grid)
+
+# Read the saved Leaflet map image
+leaflet_map_img <- readPNG("leaflet_map.png")
+
+# Create a plot with daily_avg_input_output represented by a red color scale and proportional use radius
+plot_daily_avg_input_output <- ggplot() +
+  annotation_custom(rasterGrob(leaflet_map_img, width = unit(1, "npc"), height = unit(1, "npc")), -Inf, Inf, -Inf, Inf) +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = alpha("white", 0.2), size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = daily_avg_input_output, size = daily_avg_input_output), alpha = 0.7, stroke = 0.1, fill = alpha("white", 0.2)) +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Daily Avg Input-Output") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = alpha("white", 0.2), color = alpha("white", 0.2)),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    title = "Bicing Stations in Barcelona by Daily Average Use Input-Output"
+  ) +
+  annotation_custom(
+    grob = textGrob(
+      label = "Data source: Bicing and Barcelona Open Data",
+      x = unit(1, "npc") - unit(1, "lines"),
+      y = unit(0, "npc") + unit(1, "lines"),
+      just = c("right", "bottom"),
+      gp = gpar(fontsize = 8, col = "black")
+    )
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_daily_avg_input_output.png", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_daily_avg_input_output.jpg", plot = plot_daily_avg_input_output, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # mapa stations use - clean TOP 50

@@ -1,0 +1,74 @@
+---
+title: "calculate average distance between stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Assuming stations_use_data is your dataframe
+# Count the number of station_id by neighborhood_id
+neighborhood_counts <- stations_use_data %>%
+  group_by(neighborhood_id) %>%
+  summarise(count = n())
+
+# Create the bar graph with red bars and neighborhood ID labels below the x-axis line
+plot <- ggplot(neighborhood_counts, aes(x = neighborhood_id, y = count)) +
+  geom_bar(stat = "identity", fill = "red") +
+  geom_text(aes(label = neighborhood_id), vjust = 1.5, color = "black", size = 3.5, position = position_dodge(width = 0.9), angle = 90) +
+  labs(title = "Number of Stations by Neighborhood ID",
+       x = "Neighborhood ID",
+       y = "Number of Stations") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+# Save the plot as a PNG file
+ggsave("stations_by_neighborhood.png", plot = plot, width = 10, height = 6)
+
+# Save the plot as a JPG file
+ggsave("stations_by_neighborhood.jpg", plot = plot, width = 10, height = 6)
+```
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Assuming stations_use_data is your dataframe
+# Sum the capacities by neighborhood_id
+neighborhood_capacities <- stations_use_data %>%
+  group_by(neighborhood_id) %>%
+  summarise(total_capacity = sum(capacity, na.rm = TRUE))
+
+# Create the bar graph with red bars and neighborhood ID labels below the x-axis line
+plot <- ggplot(neighborhood_capacities, aes(x = neighborhood_id, y = total_capacity)) +
+  geom_bar(stat = "identity", fill = "red") +
+  geom_text(aes(label = neighborhood_id), vjust = 1.5, color = "black", size = 3.5, position = position_dodge(width = 0.9), angle = 90) +
+  labs(title = "Total Capacity by Neighborhood ID",
+       x = "Neighborhood ID",
+       y = "Total Capacity") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+# Save the plot as a PNG file
+ggsave("capacity_by_neighborhood.png", plot = plot, width = 10, height = 6)
+
+# Save the plot as a JPG file
+ggsave("capacity_by_neighborhood.jpg", plot = plot, width = 10, height = 6)
+```
+
+
+
+```
+
+
+

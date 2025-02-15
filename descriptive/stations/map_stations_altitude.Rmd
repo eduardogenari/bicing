@@ -1,0 +1,230 @@
+---
+title: "plot stations and neighborhoods"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Calculate basic statistics for altitude
+altitude_stats <- stations_data %>%
+  summarise(
+    min_altitude = min(altitude, na.rm = TRUE),
+    max_altitude = 166,  # Set max altitude to 166
+    mean_altitude = mean(altitude, na.rm = TRUE),
+    median_altitude = median(altitude, na.rm = TRUE)
+)
+
+# Create a plot with altitude represented by a red color scale
+plot_altitude <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = altitude), size = 1.5) +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Altitude (m)") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_text(),
+    axis.ticks = element_line(),
+    panel.grid = element_line()
+  ) +
+  labs(
+    title = "Bicing Stations in Barcelona by Altitude",
+    caption = paste(
+      "Altitude Statistics:\n",
+      "Min: ", altitude_stats$min_altitude, "m\n",
+      "Max: ", altitude_stats$max_altitude, "m\n",
+      "Mean: ", round(altitude_stats$mean_altitude, 2), "m\n",
+      "Median: ", altitude_stats$median_altitude, "m"
+    )
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_neighborhoods_altitude.png", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_neighborhoods_altitude.jpg", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+#altitud final
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Create a plot with altitude represented by a red color scale and proportional use radius
+plot_altitude <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = altitude, size = altitude), alpha = 0.7, stroke = 0.1, fill = "white") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Altitude (m)") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    title = "Bicing Stations in Barcelona by Altitude"
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_neighborhoods_altitude.png", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_neighborhoods_altitude.jpg", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+
+
+#altitud ajustes 1
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Create a plot with altitude represented by a red color scale and proportional use radius
+plot_altitude <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = altitude, size = altitude), alpha = 0.7, stroke = 0.1, fill = "white") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Altitude (m)") +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Use Radius") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_neighborhoods_altitude.png", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_neighborhoods_altitude.jpg", plot = plot_altitude, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+#altitud ajustes 2 leyenda abajo 600
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Create a plot with altitude represented by a red color scale and proportional use radius
+plot_altitude <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = altitude, size = altitude), alpha = 0.7, stroke = 0.1, fill = "white") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Altitude (m)", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  scale_size_continuous(range = c(0.5, 5), name = "Proportional Altitude Radius", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal"
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_altitude_600.png", plot = plot_altitude, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_altitude_600.jpg", plot = plot_altitude, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+
+#altitud ajustes 2 leyenda abajo 600 - IMPROVE
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Create a plot with altitude represented by a red color scale and proportional use radius
+plot_altitude <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, aes(color = altitude, size = altitude), alpha = 0.7, stroke = 0.1, fill = "white") +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "Altitude (m)", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  scale_size_continuous(range = c(0.5, 5), name = "Altitud (m)", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  guides(
+    color = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.justification = "right",
+    legend.box.just = "right",
+    legend.margin = margin(t = -30)  # Adjust this value to reduce or increase the margin
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_altitude_600.png", plot = plot_altitude, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_altitude_600.jpg", plot = plot_altitude, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+

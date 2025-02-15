@@ -1,0 +1,198 @@
+---
+title: "stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+
+# estaciones sin ID
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, color = "red", size = 1.5) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_no_id.png", plot = plot, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_no_id.jpg", plot = plot, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+# estaciones con ID superior
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, color = "red", size = 1) +
+  geom_text(data = stations_data, aes(x = lon, y = lat, label = station_id), nudge_y = 0.0012, size = 1.5) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_id.png", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_id.jpg", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+# estaciones con ID circulos
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_sf(data = stations_sf, color = "red", size = 3) +
+  geom_text(data = stations_data, aes(x = lon, y = lat, label = station_id), size = 1.35, color = "white", fontface = "bold") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_id.png", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_id.jpg", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+
+# estaciones con ID sin circulos
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_text(data = stations_data, aes(x = lon, y = lat, label = station_id), size = 1.35, color = "red", fontface = "bold") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_id.png", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_id.jpg", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+
+# estaciones con ID cuadrados
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# process_data.R
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+# Load data
+stations_data <- readRDS("stations_data.rds")
+n_sf <- readRDS("n_data.rds")
+
+# Convert to sf objects
+stations_sf <- st_as_sf(stations_data, coords = c("lon", "lat"), crs = 4326)
+
+# Plot stations and neighborhoods
+plot <- ggplot() +
+  geom_sf(data = n_sf, color = alpha("black", 0.5), fill = "white", size = 0.2) +
+  geom_point(data = stations_data, aes(x = lon, y = lat), shape = 15, color = "red", size = 2.7) +
+  geom_text(data = stations_data, aes(x = lon, y = lat, label = station_id), size = 1.2, color = "white", fontface = "bold") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save the plot as a PNG file
+ggsave("stations_id.png", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("stations_id.jpg", plot = plot, width = 10, height = 10, dpi = 600, bg = "white")
+```
+
+
+
