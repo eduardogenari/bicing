@@ -1,0 +1,296 @@
+library(sf)
+library(DBI)
+library(RPostgres)
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "proyecto_12",
+  host="proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com",
+  port=5432,
+  user="postgres",
+  password="proyecto12upc",
+)
+
+dbListTables(con)
+df <- dbGetQuery(con, "SELECT *, (total_stations_bikes_input + total_stations_bikes_output)/731 as average_use, cyclable_m/area_ha as density_lanes FROM calc_neighborhoods_consolidated")
+
+
+
+
+###Analisis modelo
+class(df$population)
+df$population <- as.numeric(df$population)
+summary(df)
+warnings()
+cor(df[, c(1,5,6,7,8,13,27)])
+plot(df[,c(1,5,6,7,8,13,27)])
+#                                                           la variable population no aparece en las correlaciones
+
+#despues de convertir population a numerica, se pudieron hacer todas las correlaciones
+#sapply(df[, c(1, 5, 6,  8, 13, 27)], function(x) sd(x, na.rm = TRUE))
+
+
+
+library(FactoMineR)
+df$neighborhood_code <- as.factor(df$neighborhood_code)
+df_numeric <- df[, sapply(df, is.numeric)]
+df_subset <- df[, c(1, 5, 6, 8, 9, 13, 27,28)]
+
+# Convertir la variable de agrupación a factor
+df_subset$neighborhood_code <- as.factor(df_subset$neighborhood_code)
+
+
+#Outliers
+ll <- which((res.mout$md > res.mout$cutoff) & (res.mout$rd > res.mout$cutoff))
+
+cat("Número de outliers detectados:", length(ll), "\n")
+print(ll)
+library(chemometrics)
+
+# Usamos las columnas 2 a 7 (las variables continuas)
+res.mout <- Moutlier(df_subset[, 2:7], 0.999)
+
+# Configuramos el gráfico para una sola figura
+par(mfrow = c(1, 1))
+
+# Graficamos la distancia de Mahalanobis (md) vs. la distancia robusta (rd)
+plot(res.mout$md, res.mout$rd, pch = 19,
+     xlab = "Distancia de Mahalanobis", ylab = "Distancia robusta",
+     main = "Detección de Outliers")
+
+# Dibujamos las líneas de corte (umbral) en ambos ejes
+abline(v = res.mout$cutoff, col = "red")
+abline(h = res.mout$cutoff, col = "red")
+text(res.mout$md[ll], res.mout$rd[ll], labels = df_subset[ll, 1], pos = 4, offset = 0.5, cex = 0.8, col = "blue")
+# Identificamos los índices de las observaciones consideradas outliers
+ll <- which((res.mout$md > res.mout$cutoff) & (res.mout$rd > res.mout$cutoff))
+cat("Número de outliers detectados:", length(ll), "\n")
+print(ll)
+
+
+# Ejecutar condes() usando la primera columna (la variable de agrupación)
+condes(df_subset, 1)
+
+####MODELO 1
+modelo <- lm(average_use ~ population + perc_women + weighted_age + gross_income + stations_avg_altitude, data = df_subset)
+summary(modelo)
+vif(modelo)
+
+par( mfrow=c(2,2))
+plot( modelo, id.n=1 )
+par( mfrow=c(1,1))
+influence.measures(modelo)
+
+residualPlots( modelo )
+avPlots(modelo, id=list(method=list(cooks.distance(modelo),"x"), n = 5))
+marginalModelPlots(modelo)
+
+
+# Eliminamos los outliers del subconjunto (creamos un nuevo data frame sin ellos)
+#df_subset_clean <- df_subset[-ll, ]
+```
+boxcox(average_use ~ population + gross_income + weighted_age + stations_avg_altitude, data = df_subset)
+library(MASS)
+boxcox_result <- boxcox(lm(average_use ~ population + gross_income + weighted_age + stations_avg_altitude, data = df_subset), lambda = seq(-2,2,0.1))
+#lambda_optimo <- boxcox_result$x[which.max(boxcox_result$y)] 
+#print(lambda_optimo)
+
+boxTidwell(log(average_use) ~ population  + gross_income + stations_avg_altitude, data = df_subset)
+
+
+
+
+log_average_use <- df$average_use^(0.25)
+# Calcular la media y desviación estándar de la variable transformada
+mm <- mean(log_average_use)
+ss <- sd(log_average_use)
+# Mostrar la media y desviación estándar
+mm
+ss
+# Crear un histograma de la variable transformada
+hist(log_average_use, freq = FALSE, main = "Histograma de log(average_use)", xlab = "log(average_use)")
+# Superponer la curva de densidad normal teórica
+curve(dnorm(x, mm, ss), col = "red", add = TRUE)
+# Realizar la prueba de normalidad de Shapiro-Wilk
+shapiro.test(log_average_use)
+#####MODELO 2
+
+```{r}
+df_subset$population_trans <- df_subset$population^(0.25)
+df_subset$stations_avg_altitude_trans <- df_subset$stations_avg_altitude^(0.25)
+
+m0 <- lm(log(average_use) ~ population_trans + poly(gross_income, 2, raw=TRUE) + stations_avg_altitude_trans, data = df_subset)
+summary(m0)
+vif(m0)
+#Un vif mayor a 10 indica una colinealidad severa
+
+# 95% IC con el modelo m0r  education = 15 age = 30
+#predict( m0 , newdata=data.frame(education = 15, age = 30), interval="prediction")
+
+
+par( mfrow=c(2,2))
+plot( m0, id.n=1 )
+par( mfrow=c(1,1))
+influence.measures(m0)
+
+
+summary(df_subset_clean)
+numeric_columns <- sapply(df_subset_clean, is.numeric)  # Identificar columnas numéricas
+apply(df_subset_clean[, numeric_columns], 2, function(x) c(mean=mean(x, na.rm=TRUE), sd=sd(x, na.rm=TRUE)))
+# Filtrar solo las columnas numéricas
+numeric_columns <- sapply(df_subset_clean, is.numeric)
+
+# Calcular medias y desviaciones estándar solo para columnas numéricas
+df_numeric <- df_subset_clean[, numeric_columns]
+
+# Estandarizar los valores de las observaciones anómalas (ll)
+(df_numeric[ll, ] - colMeans(df_numeric, na.rm=TRUE)) / apply(df_numeric, 2, sd, na.rm=TRUE)
+
+
+# Transformaciones para encajar en las hipótesis del modelo lineal
+library(MASS)
+
+#boxcox(average_use ~ population + gross_income + stations_avg_altitude, data = df_subset_clean)
+#verificacion de valores faltantes:
+#colSums(is.na(df_subset_clean))
+#any(df_subset_clean$average_use <= 0)
+#boxTidwell(log(average_use) ~ population  + gross_income + stations_avg_altitude, data = df_subset_clean)
+
+
+residualPlots( m0 )
+avPlots(m0, id=list(method=list(cooks.distance(m0),"x"), n = 5))
+crPlots(m0)
+marginalModelPlots(m0)
+marginalModelPlots(m0)
+
+cooksd <- cooks.distance(m0)
+plot(cooksd, type="h", main="Distancia de Cook", ylab="Cook's Distance")
+abline(h = 1, col="red", lty=2)
+
+avPlots(m0, id=list(method=list(cooks.distance(m0),"x"), n = 5))
+
+# Cook's distance es el indicador de influencia
+llcoo <- Boxplot(cooks.distance(m0), id=list(n=4, labels=row.names(model.frame(m0))))
+influencePlot(m0)
+
+llres<-which(abs(rstudent(m0))>3);llres
+llhat<-which(hatvalues(m0)>3*length(coef(m0))/nrow(df_subset));llhat
+ll<-which(row.names(df_subset) %in% c("14", "35","46"));ll
+print(ll)
+
+df_subset_clean <- df_subset[-ll, ]
+# Extraer las filas 14 y 35 del dataframe
+observaciones_influyentes <- df_subset[c(14, 35), ]
+
+# Mostrar las observaciones seleccionadas
+print(observaciones_influyentes)
+
+
+#No permite ejecutar el boxTidwell, probablemente por la elevada dispersion en algunas variables
+#normalize_minmax <- function(x) {
+# scaled_x <- (x - min(x)) / (max(x) - min(x))  # Normalización Min-Max
+#return (scaled_x + 1e-6)  # Desplazamos para evitar valores 0
+#}
+
+#df_scaled <- df_subset_clean  # Copia el dataframe original
+
+# Aplicamos normalización Min-Max a todas las variables numéricas excepto average_use
+#df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "average_use"] <- 
+# lapply(df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "average_use"], normalize_minmax)
+###MODELO 3
+m1 <- lm(log(average_use) ~ population_trans + poly(gross_income, 2, raw=TRUE) + stations_avg_altitude, data = df_subset_clean)
+summary(m1)
+vif(m1)
+
+par(mfrow=c(2,2))
+plot( m1, id.n=5 )
+par(mfrow=c(1,1))
+
+#summary(df_scaled)
+residualPlots( m1,, ylim=c(-2,2) )
+avPlots(m1, id=list(method=list(cooks.distance(m1),"x"), n = 0))
+crPlots(m1, ylab="Component + Residual")
+marginalModelPlots(m1)
+marginalModelPlots(m0)
+
+library(lmtest)
+bptest(m1)
+
+
+#eliminamos la variable perc_women, basados en que no era significativa en el primer modelo
+#Aplicamos las transformaciones a income y altitud, sugeridos por boxTidwell
+
+###Modelo 4
+
+m2 <- lm(log(average_use) ~ population_trans + weighted_age + density_lanes + perc_women + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_clean)
+
+summary(m2)
+vif(m2)
+avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
+anova(m1,m2)
+
+###PREDICCION MODELO 1
+# Aplicar las mismas transformaciones que se usaron en el modelo m1
+df_transformed <- df_subset
+df_transformed$population_trans <- df_subset$population^(1/4)  # Raíz cuarta
+df_transformed$gross_income <- df_subset$gross_income  # Se usó polinómico en el modelo
+df_transformed$stations_avg_altitude <- df_subset$stations_avg_altitude  # No cambia
+
+# Asegurar que df_transformed solo contenga las variables necesarias
+df_transformed <- df_transformed[, c("population_trans", "gross_income", "stations_avg_altitude")]
+# Predecir en la escala transformada (logarítmica)
+pred_log <- predict(m1, newdata = df_transformed, interval = "confidence")
+# Transformar las predicciones de vuelta a la escala original
+pred_original <- exp(pred_log)
+# Graficar valores predichos vs. valores reales
+plot(df_subset$average_use, pred_original[, "fit"], 
+     xlab = "Uso Real de Bicicletas", ylab = "Uso Predicho",
+     main = "Predicciones con Intervalos de Confianza", pch = 16)
+
+# Agregar líneas de intervalo de confianza
+arrows(df_subset$average_use, pred_original[, "lwr"], 
+       df_subset$average_use, pred_original[, "upr"], 
+       angle = 90, code = 3, length = 0.05, col = "gray")
+
+# Agregar línea de identidad (y = x) para evaluar ajuste
+abline(a = 0, b = 1, col = "red", lty = 2)
+
+
+
+#PREDICCION MODELO 2
+# Aplicar las mismas transformaciones que se usaron en el modelo m2
+df_transformed <- df_subset
+df_transformed$population_trans <- df_subset$population^(1/4)  # Raíz cuarta
+df_transformed$weighted_age <- df_subset$average_age  # No se transformó
+df_transformed$density_lanes <- df_subset$density_lanes  # No se transformó
+df_transformed$perc_women <- df_subset$perc_women  # No se transformó
+df_transformed$stations_avg_altitude_trans <- df_subset$stations_avg_altitude^(1/4)  # Raíz cuarta
+df_transformed$gross_income <- df_subset$gross_income  # Se usó polinómico en el modelo
+
+# Asegurar que df_transformed solo contenga las variables necesarias
+df_transformed <- df_transformed[, c("population_trans", "weighted_age", "density_lanes", 
+                                     "perc_women", "stations_avg_altitude_trans", 
+                                     "gross_income")]
+
+# Predecir en la escala transformada (logarítmica)
+pred_log <- predict(m2, newdata = df_transformed, interval = "confidence")
+
+# Transformar las predicciones de vuelta a la escala original
+pred_original <- exp(pred_log)
+
+# Graficar valores predichos vs. valores reales
+plot(df_subset$average_use, pred_original[, "fit"], 
+     xlab = "Uso Real de Bicicletas", ylab = "Uso Predicho",
+     main = "Predicciones con Intervalos de Confianza - Modelo 2", pch = 16)
+
+# Agregar líneas de intervalo de confianza
+arrows(df_subset$average_use, pred_original[, "lwr"], 
+       df_subset$average_use, pred_original[, "upr"], 
+       angle = 90, code = 3, length = 0.05, col = "gray")
+
+# Agregar línea de identidad (y = x) para evaluar ajuste
+abline(a = 0, b = 1, col = "red", lty = 2)
+
+
+
+
+
