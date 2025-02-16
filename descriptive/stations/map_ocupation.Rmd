@@ -1,0 +1,156 @@
+---
+title: "plot stations and neighborhoods"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+# improve 1
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(DBI)
+library(RPostgres)
+
+# Connect to the database
+con <- dbConnect(
+  RPostgres::Postgres(),
+  dbname = "proyecto_12",
+  host = "proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com",
+  port = 5432,
+  user = "postgres",
+  password = "proyecto12upc"
+)
+
+# Load data from the database
+stations <- dbGetQuery(con, "
+  SELECT DISTINCT
+    s.station_id,
+    s.address,
+    s.lat,
+    s.lon,
+    ST_AsText(s.geom) AS geom_wkt  
+  FROM stations s
+")
+
+stations$geom_sf <- st_as_sf(stations, wkt = "geom_wkt")
+
+stations_intervals <- dbGetQuery(con, "SELECT * FROM mvw_stations_intervals")
+
+stations_neighborhoods_consolidated <- dbGetQuery(con, "SELECT * FROM calc_stations_neighborhoods_consolidated")
+
+neighborhoods <- dbGetQuery(con, "
+    SELECT
+        n.neighborhood_code, n.neighborhood_name, 
+        ST_AsText(n.geom) AS neighborhood_geom_wkt
+    FROM neighborhoods n")
+neighborhoods_sf <- st_as_sf(neighborhoods, wkt = "neighborhood_geom_wkt", crs = 4326)
+
+# Prepare data
+stations_activity_1 <- stations_intervals %>%
+  filter(interval_value == 1) %>%
+  left_join(stations_neighborhoods_consolidated %>%
+              select(station_id, station_address, neighborhood_name, station_capacity), 
+            by = "station_id") %>%
+  left_join(stations %>%
+              select(station_id, lat, lon), 
+            by = "station_id", multiple = "last")
+
+# Stations with high occupancy
+stations_most_occupied <- stations_activity_1 %>%
+  mutate(
+    initial_occupancy = initial_num_bikes_available / station_capacity,
+    final_occupancy = final_num_bikes_available / station_capacity
+  ) %>%
+  group_by(station_id, station_address, neighborhood_name, lat, lon) %>%  
+  mutate(total_intervals = n()) %>%  # Count total intervals per station
+  filter(initial_occupancy >= 0.9 & final_occupancy >= 0.9) %>%
+  summarise(
+    total_high_occupancy_hours = n(),
+    total_intervals = first(total_intervals),
+    high_occupancy_percentage = (total_high_occupancy_hours / total_intervals) * 100
+  ) %>%
+  arrange(desc(high_occupancy_percentage)) %>%
+  st_as_sf(coords = c("lat", "lon"), crs = 4326)
+
+# Stations with low availability
+stations_less_availability <- stations_activity_1 %>%
+  mutate(
+    initial_occupancy = initial_num_bikes_available / station_capacity,
+    final_occupancy = final_num_bikes_available / station_capacity
+  ) %>%
+  group_by(station_id, station_address, neighborhood_name, lat, lon) %>%  
+  mutate(total_intervals = n()) %>%  # Count total intervals per station
+  filter(initial_occupancy <= 0.1 & final_occupancy <= 0.1) %>%
+  summarise(
+    total_low_availability_hours = n(),
+    total_intervals = first(total_intervals),
+    low_availability_percentage = (total_low_availability_hours / total_intervals) * 100
+  ) %>%
+  arrange(desc(low_availability_percentage)) %>%
+  st_as_sf(coords = c("lat", "lon"), crs = 4326)
+
+# Plot high occupancy stations
+plot_high_occupancy <- ggplot() +
+  geom_sf(data = neighborhoods_sf, fill = NA, color = "black", size = 0.2) +  
+  geom_sf(data = stations_most_occupied, aes(size = high_occupancy_percentage, color = high_occupancy_percentage), alpha = 0.7) +
+  scale_size_continuous(range = c(0.5, 5), name = "% of hours with high occupancy", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "% of hours with high occupancy", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  guides(
+    color = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.justification = "right",
+    legend.box.just = "right",
+    legend.margin = margin(t = -30)  # Adjust this value to reduce or increase the margin
+  )
+
+# Save the high occupancy plot
+ggsave("stations_high_occupancy.png", plot = plot_high_occupancy, width = 10, height = 10, dpi = 600, bg = "white")
+ggsave("stations_high_occupancy.jpg", plot = plot_high_occupancy, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Plot low availability stations
+plot_low_availability <- ggplot() +
+  geom_sf(data = neighborhoods_sf, fill = NA, color = "black", size = 0.2) +  
+  geom_sf(data = stations_less_availability, aes(size = low_availability_percentage, color = low_availability_percentage), alpha = 0.7) +
+  scale_size_continuous(range = c(0.5, 5), name = "% of hours with low availability", guide = guide_legend(direction = "horizontal", title.position = "top")) +
+  scale_color_gradient(low = "#FFCDD2", high = "#8B0000", name = "% of hours with low availability", guide = guide_colorbar(direction = "horizontal", title.position = "top")) +
+  guides(
+    color = guide_colorbar(order = 1),
+    size = guide_legend(order = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.justification = "right",
+    legend.box.just = "right",
+    legend.margin = margin(t = -30)  # Adjust this value to reduce or increase the margin
+  )
+
+# Save the low availability plot
+ggsave("stations_low_availability.png", plot = plot_low_availability, width = 10, height = 10, dpi = 600, bg = "white")
+ggsave("stations_low_availability.jpg", plot = plot_low_availability, width = 10, height = 10, dpi = 600, bg = "white")
+
+# Disconnect from the database
+dbDisconnect(con)
+```
+
+
