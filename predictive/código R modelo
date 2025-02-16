@@ -23,7 +23,8 @@ summary(df)
 warnings()
 cor(df[, c(1,5,6,7,8,13,27)])
 plot(df[,c(1,5,6,7,8,13,27)])
-#        la variable population no aparece en las correlaciones
+#                                                           la variable population no aparece en las correlaciones
+
 #despues de convertir population a numerica, se pudieron hacer todas las correlaciones
 #sapply(df[, c(1, 5, 6,  8, 13, 27)], function(x) sd(x, na.rm = TRUE))
 
@@ -173,7 +174,7 @@ influencePlot(m0)
 
 llres<-which(abs(rstudent(m0))>3);llres
 llhat<-which(hatvalues(m0)>3*length(coef(m0))/nrow(df_subset));llhat
-ll<-which(row.names(df_subset) %in% c("14", "35"));ll
+ll<-which(row.names(df_subset) %in% c("14", "35","46"));ll
 print(ll)
 
 df_subset_clean <- df_subset[-ll, ]
@@ -226,5 +227,70 @@ summary(m2)
 vif(m2)
 avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
 anova(m1,m2)
+
+###PREDICCION MODELO 1
+# Aplicar las mismas transformaciones que se usaron en el modelo m1
+df_transformed <- df_subset
+df_transformed$population_trans <- df_subset$population^(1/4)  # Raíz cuarta
+df_transformed$gross_income <- df_subset$gross_income  # Se usó polinómico en el modelo
+df_transformed$stations_avg_altitude <- df_subset$stations_avg_altitude  # No cambia
+
+# Asegurar que df_transformed solo contenga las variables necesarias
+df_transformed <- df_transformed[, c("population_trans", "gross_income", "stations_avg_altitude")]
+# Predecir en la escala transformada (logarítmica)
+pred_log <- predict(m1, newdata = df_transformed, interval = "confidence")
+# Transformar las predicciones de vuelta a la escala original
+pred_original <- exp(pred_log)
+# Graficar valores predichos vs. valores reales
+plot(df_subset$average_use, pred_original[, "fit"], 
+     xlab = "Uso Real de Bicicletas", ylab = "Uso Predicho",
+     main = "Predicciones con Intervalos de Confianza", pch = 16)
+
+# Agregar líneas de intervalo de confianza
+arrows(df_subset$average_use, pred_original[, "lwr"], 
+       df_subset$average_use, pred_original[, "upr"], 
+       angle = 90, code = 3, length = 0.05, col = "gray")
+
+# Agregar línea de identidad (y = x) para evaluar ajuste
+abline(a = 0, b = 1, col = "red", lty = 2)
+
+
+
+#PREDICCION MODELO 2
+# Aplicar las mismas transformaciones que se usaron en el modelo m2
+df_transformed <- df_subset
+df_transformed$population_trans <- df_subset$population^(1/4)  # Raíz cuarta
+df_transformed$weighted_age <- df_subset$average_age  # No se transformó
+df_transformed$density_lanes <- df_subset$density_lanes  # No se transformó
+df_transformed$perc_women <- df_subset$perc_women  # No se transformó
+df_transformed$stations_avg_altitude_trans <- df_subset$stations_avg_altitude^(1/4)  # Raíz cuarta
+df_transformed$gross_income <- df_subset$gross_income  # Se usó polinómico en el modelo
+
+# Asegurar que df_transformed solo contenga las variables necesarias
+df_transformed <- df_transformed[, c("population_trans", "weighted_age", "density_lanes", 
+                                     "perc_women", "stations_avg_altitude_trans", 
+                                     "gross_income")]
+
+# Predecir en la escala transformada (logarítmica)
+pred_log <- predict(m2, newdata = df_transformed, interval = "confidence")
+
+# Transformar las predicciones de vuelta a la escala original
+pred_original <- exp(pred_log)
+
+# Graficar valores predichos vs. valores reales
+plot(df_subset$average_use, pred_original[, "fit"], 
+     xlab = "Uso Real de Bicicletas", ylab = "Uso Predicho",
+     main = "Predicciones con Intervalos de Confianza - Modelo 2", pch = 16)
+
+# Agregar líneas de intervalo de confianza
+arrows(df_subset$average_use, pred_original[, "lwr"], 
+       df_subset$average_use, pred_original[, "upr"], 
+       angle = 90, code = 3, length = 0.05, col = "gray")
+
+# Agregar línea de identidad (y = x) para evaluar ajuste
+abline(a = 0, b = 1, col = "red", lty = 2)
+
+
+
 
 
