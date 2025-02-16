@@ -1,0 +1,23 @@
+# AWS
+
+conn = psycopg2.connect(
+    dbname="proyecto_12",
+    user="postgres",
+    password="proyecto12upc",
+    host="proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com",
+    port="5432"
+)
+cursor = conn.cursor();
+
+from sqlalchemy import create_engine
+
+# Configura tu cadena de conexión
+# Cambia los valores por los de tu base de datos
+usuario = 'postgres'
+contraseña = 'proyecto12upc'
+host = 'proyecto12.czowmm2ee3ym.us-east-1.rds.amazonaws.com'  # o la IP de tu servidor
+puerto = '5432'  # el puerto por defecto de PostgreSQL
+base_datos = 'proyecto_12'
+
+# Establece la conexión con SQLAlchemy
+engine = create_engine(f'postgresql://{usuario}:{contraseña}@{host}:{puerto}/{base_datos}');
