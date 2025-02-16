@@ -1,0 +1,31 @@
+with open('G:\\Mi unidad\\Proyecto 12 UPC\\Datos\\99_Extras\\18_Unidades administrativas (distritos, barrios, etc)\\BarcelonaCiutat_Barris.json', 'r', encoding='utf-8') as file:
+    data = json.load(file)
+
+
+conn = psycopg2.connect(
+    dbname="postgres",
+    user="postgres.swwmwlhndfuxfnnrgoth",
+    password="proyecto12upc",
+    host="aws-0-eu-central-1.pooler.supabase.com",
+    port="5432"
+)
+cur = conn.cursor()
+
+# Insertar los datos en la tabla
+for barrio in data:
+    codi_districte = barrio['codi_districte']
+    nom_districte = barrio['nom_districte']
+    codi_barri = barrio['codi_barri']
+    nom_barri = barrio['nom_barri']
+    geom_wgs84 = barrio['geometria_wgs84']
+
+    # Convertir el texto de la geometría WGS84 en un objeto PostGIS
+    cur.execute("""
+        INSERT INTO barcelona_barris (codi_districte, nom_districte, codi_barri, nom_barri, geom)
+        VALUES (%s, %s, %s, %s, ST_GeomFromText(%s, 4326));
+    """, (codi_districte, nom_districte, codi_barri, nom_barri, geom_wgs84))
+
+# Guardar cambios y cerrar conexión
+conn.commit()
+cur.close()
+conn.close()
