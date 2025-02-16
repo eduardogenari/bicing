@@ -11,89 +11,38 @@ con <- dbConnect(
 )
 
 dbListTables(con)
-df <- dbGetQuery(con, "SELECT * FROM calc_neighborhoods_consolidated")
-
-## Normalidad total_stations_bikes_output
-
-```{r}
-hist(df$total_stations_bikes_output)
-
-mm<-mean(df$total_stations_bikes_output);ss<-sd(df$total_stations_bikes_output)
-mm;ss
-hist(df$total_stations_bikes_output,freq=F)
-curve(dnorm(x,mm,ss),col="red",add=T)
-shapiro.test(df$total_stations_bikes_output) # No hay normalidad
-
-## Descriptiva fare, dist, concen, passen
-
-```{r}
-names(df)
-selcol<-c(1:5,7)
-summary(df[,selcol])
-```
-
-## Variables más relacionadas con total_stations_bikes_output
-
-```{r}
-plot(df[,selcol])
-# Mejor
-plot(df[,c(7,5,6,15)])  # Herramienta gráfica
-# Calcular coeficiente correlación lineal (Pearson)
-cor(df[,c(7,5,6,15)])
-
-``````
+df <- dbGetQuery(con, "SELECT *, (total_stations_bikes_input + total_stations_bikes_output)/731 as average_use, cyclable_m/area_ha as density_lanes FROM calc_neighborhoods_consolidated")
 
 
-#Verificacion de NAs y columnas no numericas:
-str(df)
-summary(df)
-
-colSums(is.na(df))
-colSums(is.nan(as.matrix(df)))
-cor(df, use = "pairwise.complete.obs")
-#alta correlacion entre población y poblacion de mujeres. También entre capacity y total_bike_output.
-install.packages("car")
-library(car)
-df$population <- as.numeric(df$population)
-unique(df$population)
-#conversión a numérico porque no reconocía la varianza de population
-
-vif(lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df))
-#Solo me permitió calcular el vif habiendo quitado capacity y poblacion de mujeres, entiendo que por la colinealidad
-#(aparecía el error "there are aliased coefficients in the model")
-
-modelo_lm <- lm(total_bikes_output ~ population + avg_age + avg_income + avg_altitude, data = df)
-summary(modelo_lm)
 
 
 ###Analisis modelo
-
-summary(df)
-warnings()
-cor(df[, c(1,5,6,7,8,12,15)])
-plot(df[,c(1,5,6,7,8,12,15)])
-#la variable population no aparece en las correlaciones
 class(df$population)
 df$population <- as.numeric(df$population)
+summary(df)
+warnings()
+cor(df[, c(1,5,6,7,8,13,27)])
+plot(df[,c(1,5,6,7,8,13,27)])
+#        la variable population no aparece en las correlaciones
 #despues de convertir population a numerica, se pudieron hacer todas las correlaciones
-#sapply(df[, c(1, 5, 6, 7, 8, 12, 15)], function(x) sd(x, na.rm = TRUE))
+#sapply(df[, c(1, 5, 6,  8, 13, 27)], function(x) sd(x, na.rm = TRUE))
 
 
 
 library(FactoMineR)
 df$neighborhood_code <- as.factor(df$neighborhood_code)
 df_numeric <- df[, sapply(df, is.numeric)]
-df_subset <- df[, c(1, 5, 6, 7, 8, 12, 15)]
+df_subset <- df[, c(1, 5, 6, 8, 9, 13, 27,28)]
 
 # Convertir la variable de agrupación a factor
 df_subset$neighborhood_code <- as.factor(df_subset$neighborhood_code)
 
-# Ejecutar condes() usando la primera columna (la variable de agrupación)
-condes(df_subset, 1)
-modelo <- lm(total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df)
-summary(modelo)
 
+#Outliers
+ll <- which((res.mout$md > res.mout$cutoff) & (res.mout$rd > res.mout$cutoff))
 
+cat("Número de outliers detectados:", length(ll), "\n")
+print(ll)
 library(chemometrics)
 
 # Usamos las columnas 2 a 7 (las variables continuas)
@@ -110,19 +59,65 @@ plot(res.mout$md, res.mout$rd, pch = 19,
 # Dibujamos las líneas de corte (umbral) en ambos ejes
 abline(v = res.mout$cutoff, col = "red")
 abline(h = res.mout$cutoff, col = "red")
-
+text(res.mout$md[ll], res.mout$rd[ll], labels = df_subset[ll, 1], pos = 4, offset = 0.5, cex = 0.8, col = "blue")
 # Identificamos los índices de las observaciones consideradas outliers
 ll <- which((res.mout$md > res.mout$cutoff) & (res.mout$rd > res.mout$cutoff))
 cat("Número de outliers detectados:", length(ll), "\n")
 print(ll)
 
-# Eliminamos los outliers del subconjunto (creamos un nuevo data frame sin ellos)
-df_subset_clean <- df_subset[-ll, ]
-```
 
+# Ejecutar condes() usando la primera columna (la variable de agrupación)
+condes(df_subset, 1)
+
+####MODELO 1
+modelo <- lm(average_use ~ population + perc_women + weighted_age + gross_income + stations_avg_altitude, data = df_subset)
+summary(modelo)
+vif(modelo)
+
+par( mfrow=c(2,2))
+plot( modelo, id.n=1 )
+par( mfrow=c(1,1))
+influence.measures(modelo)
+
+residualPlots( modelo )
+avPlots(modelo, id=list(method=list(cooks.distance(modelo),"x"), n = 5))
+marginalModelPlots(modelo)
+
+
+# Eliminamos los outliers del subconjunto (creamos un nuevo data frame sin ellos)
+#df_subset_clean <- df_subset[-ll, ]
+```
+boxcox(average_use ~ population + gross_income + weighted_age + stations_avg_altitude, data = df_subset)
+library(MASS)
+boxcox_result <- boxcox(lm(average_use ~ population + gross_income + weighted_age + stations_avg_altitude, data = df_subset), lambda = seq(-2,2,0.1))
+#lambda_optimo <- boxcox_result$x[which.max(boxcox_result$y)] 
+#print(lambda_optimo)
+
+boxTidwell(log(average_use) ~ population  + gross_income + stations_avg_altitude, data = df_subset)
+
+
+
+
+log_average_use <- df$average_use^(0.25)
+# Calcular la media y desviación estándar de la variable transformada
+mm <- mean(log_average_use)
+ss <- sd(log_average_use)
+# Mostrar la media y desviación estándar
+mm
+ss
+# Crear un histograma de la variable transformada
+hist(log_average_use, freq = FALSE, main = "Histograma de log(average_use)", xlab = "log(average_use)")
+# Superponer la curva de densidad normal teórica
+curve(dnorm(x, mm, ss), col = "red", add = TRUE)
+# Realizar la prueba de normalidad de Shapiro-Wilk
+shapiro.test(log_average_use)
+#####MODELO 2
 
 ```{r}
-m0 <- lm( total_stations_bikes_output ~ population + perc_women + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+df_subset$population_trans <- df_subset$population^(0.25)
+df_subset$stations_avg_altitude_trans <- df_subset$stations_avg_altitude^(0.25)
+
+m0 <- lm(log(average_use) ~ population_trans + poly(gross_income, 2, raw=TRUE) + stations_avg_altitude_trans, data = df_subset)
 summary(m0)
 vif(m0)
 #Un vif mayor a 10 indica una colinealidad severa
@@ -130,33 +125,78 @@ vif(m0)
 # 95% IC con el modelo m0r  education = 15 age = 30
 #predict( m0 , newdata=data.frame(education = 15, age = 30), interval="prediction")
 
-# Transformaciones para encajar en las hipótesis del modelo lineal
+
 par( mfrow=c(2,2))
-plot( m0, id.n=0 )
+plot( m0, id.n=1 )
 par( mfrow=c(1,1))
 influence.measures(m0)
 
+
+summary(df_subset_clean)
+numeric_columns <- sapply(df_subset_clean, is.numeric)  # Identificar columnas numéricas
+apply(df_subset_clean[, numeric_columns], 2, function(x) c(mean=mean(x, na.rm=TRUE), sd=sd(x, na.rm=TRUE)))
+# Filtrar solo las columnas numéricas
+numeric_columns <- sapply(df_subset_clean, is.numeric)
+
+# Calcular medias y desviaciones estándar solo para columnas numéricas
+df_numeric <- df_subset_clean[, numeric_columns]
+
+# Estandarizar los valores de las observaciones anómalas (ll)
+(df_numeric[ll, ] - colMeans(df_numeric, na.rm=TRUE)) / apply(df_numeric, 2, sd, na.rm=TRUE)
+
+
+# Transformaciones para encajar en las hipótesis del modelo lineal
 library(MASS)
 
-boxcox(total_stations_bikes_output ~ population  + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+#boxcox(average_use ~ population + gross_income + stations_avg_altitude, data = df_subset_clean)
 #verificacion de valores faltantes:
-colSums(is.na(df_subset_clean))
-any(df_subset_clean$total_stations_bikes_output <= 0)
-summary(df_subset_clean)
-boxTidwell(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
-summary(df_subset_clean)
+#colSums(is.na(df_subset_clean))
+#any(df_subset_clean$average_use <= 0)
+#boxTidwell(log(average_use) ~ population  + gross_income + stations_avg_altitude, data = df_subset_clean)
+
+
+residualPlots( m0 )
+avPlots(m0, id=list(method=list(cooks.distance(m0),"x"), n = 5))
+crPlots(m0)
+marginalModelPlots(m0)
+marginalModelPlots(m0)
+
+cooksd <- cooks.distance(m0)
+plot(cooksd, type="h", main="Distancia de Cook", ylab="Cook's Distance")
+abline(h = 1, col="red", lty=2)
+
+avPlots(m0, id=list(method=list(cooks.distance(m0),"x"), n = 5))
+
+# Cook's distance es el indicador de influencia
+llcoo <- Boxplot(cooks.distance(m0), id=list(n=4, labels=row.names(model.frame(m0))))
+influencePlot(m0)
+
+llres<-which(abs(rstudent(m0))>3);llres
+llhat<-which(hatvalues(m0)>3*length(coef(m0))/nrow(df_subset));llhat
+ll<-which(row.names(df_subset) %in% c("14", "35"));ll
+print(ll)
+
+df_subset_clean <- df_subset[-ll, ]
+# Extraer las filas 14 y 35 del dataframe
+observaciones_influyentes <- df_subset[c(14, 35), ]
+
+# Mostrar las observaciones seleccionadas
+print(observaciones_influyentes)
+
+
 #No permite ejecutar el boxTidwell, probablemente por la elevada dispersion en algunas variables
-normalize_minmax <- function(x) {
-  scaled_x <- (x - min(x)) / (max(x) - min(x))  # Normalización Min-Max
-  return (scaled_x + 1e-6)  # Desplazamos para evitar valores 0
-}
+#normalize_minmax <- function(x) {
+# scaled_x <- (x - min(x)) / (max(x) - min(x))  # Normalización Min-Max
+#return (scaled_x + 1e-6)  # Desplazamos para evitar valores 0
+#}
 
-df_scaled <- df_subset_clean  # Copia el dataframe original
+#df_scaled <- df_subset_clean  # Copia el dataframe original
 
-# Aplicamos normalización Min-Max a todas las variables numéricas excepto total_stations_bikes_output
-#df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "total_stations_bikes_output"] <- 
- # lapply(df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "total_stations_bikes_output"], normalize_minmax)
-m1 <- lm(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
+# Aplicamos normalización Min-Max a todas las variables numéricas excepto average_use
+#df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "average_use"] <- 
+# lapply(df_scaled[, sapply(df_scaled, is.numeric) & names(df_scaled) != "average_use"], normalize_minmax)
+###MODELO 3
+m1 <- lm(log(average_use) ~ population_trans + poly(gross_income, 2, raw=TRUE) + stations_avg_altitude, data = df_subset_clean)
 summary(m1)
 vif(m1)
 
@@ -164,86 +204,27 @@ par(mfrow=c(2,2))
 plot( m1, id.n=5 )
 par(mfrow=c(1,1))
 
-boxTidwell(log(total_stations_bikes_output) ~ population + average_age + gross_income + stations_avg_altitude, data = df_subset_clean)
-summary(df_scaled)
+#summary(df_scaled)
+residualPlots( m1,, ylim=c(-2,2) )
+avPlots(m1, id=list(method=list(cooks.distance(m1),"x"), n = 0))
+crPlots(m1, ylab="Component + Residual")
+marginalModelPlots(m1)
+marginalModelPlots(m0)
 
+library(lmtest)
+bptest(m1)
 
 
 #eliminamos la variable perc_women, basados en que no era significativa en el primer modelo
 #Aplicamos las transformaciones a income y altitud, sugeridos por boxTidwell
-df_subset_clean$gross_income_trans <- df_subset_clean$gross_income^(-0.74953)
-df_subset_clean$stations_avg_altitude_trans <- df_subset_clean$stations_avg_altitude^(0.17449)
-m1_trans <- lm(log(total_stations_bikes_output) ~ population + average_age +
-                 gross_income_trans + stations_avg_altitude_trans,
-               data = df_subset_clean)
-summary(m1_trans)
 
-par(mfrow=c(2,2))
-plot( m1_trans, id.n=5 )
-par(mfrow=c(1,1))
-#Las observaciones 3,14,27,35,46 pueden ser influyentes
-df_subset_clean[c(35, 46, 14, 57), ]
-cooksd <- cooks.distance(m1_trans)
-plot(cooksd, type="h", main="Distancia de Cook", ylab="Cook’s Distance")
-abline(h = 1, col="red", lty=2)
+###Modelo 4
 
-residualPlots( m1_trans )
-avPlots(m1, id=list(method=list(cooks.distance(m1),"x"), n = 5))
-crPlots(m1)
-marginalModelPlots(m1)
-marginalModelPlots(m0)
-#Lo ideal es que los datos y el modelo coincidan en estas graficas
-
-
-#Se hará una transformacion polinomial ala variable gross_income, manteniendo la tranformacion de stations_avg_altitude
-m2 <- lm(log(total_stations_bikes_output) ~ population + average_age + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_clean)
+m2 <- lm(log(average_use) ~ population_trans + weighted_age + density_lanes + perc_women + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_clean)
 
 summary(m2)
 vif(m2)
 avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
-
-par(mfrow=c(2,2))
-plot( m2, id.n=0 )
-par(mfrow=c(1,1))
-
-residualPlots( m2 )
-avPlots(m2, id=list(method=list(cooks.distance(m2),"x"), n = 5))
-marginalModelPlots(m2)
-
-library(effects)
-plot(allEffects(m2, transformation=list(link=log, inverse=exp)))  # Axes name for Y has to be reset to wage
-
-llres<-which(abs(rstudent(m2))>3);llres
-llhat<-which(hatvalues(m2)>3*length(coef(m2))/nrow(df_subset_clean));llhat
-# Cook's distance es el indicador de influencia
-llcoo <- Boxplot(cooks.distance(m2), id=list(n=2, labels=row.names(model.frame(m2))))
-influencePlot(m2)
+anova(m1,m2)
 
 
-print(llres)
-#Aparecen como observaciones influyentes la fila 12 y 14
-df_subset_clean[llres,]
-ll<-which(row.names(df_subset_clean) %in% c("12", "14"));ll
-df_subset_clean[ll,]
-df_subset_cleanm3<-df_subset_clean[-ll,]
-#En df_subset_cleanm3 se eliminan las observaciones influyentes 12 y 14
-m3 <- lm(log(total_stations_bikes_output) ~ population + average_age + stations_avg_altitude_trans + poly(gross_income, 2, raw=TRUE), data=df_subset_cleanm3)
-summary(m3)
-
-par(mfrow=c(2,2))
-plot( m3, id.n=0 )
-par(mfrow=c(1,1))
-
-# El modelo m3 consigue un adjusted R-squared de 0,8373, aunque residuals vs Fitted presenta aun una curvatura
-residualPlots( m3 )
-avPlots(m3, id=list(method=list(cooks.distance(m3),"x"), n = 7))
-marginalModelPlots(m3)
-library(effects)
-plot(allEffects(m3))
-
-llres<-which(abs(rstudent(m3))>3);llres
-llhat<-which(hatvalues(m3)>3*length(coef(m3))/nrow(df));llhat
-llcoo<-Boxplot(cooks.distance(m3), id=list(n=2,labels=row.names(df_subset_cleanm3)))
-influencePlot(m3, id=list(n=5,method="noteworthy"))
-
-names(df_subset_cleanm3)
