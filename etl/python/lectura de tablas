@@ -1,0 +1,52 @@
+# neighborhood
+query = "SELECT * FROM neighborhood;"
+neighborhood = gpd.read_postgis(query, engine, geom_col='geom')
+
+# stations
+query = "SELECT * FROM stations;"
+stations = gpd.read_postgis(query, engine, geom_col='geom')
+
+# stations_status
+query = "SELECT * FROM stations_status limit 100;"
+stations_status = pd.read_sql(query, engine)
+
+
+# bike_lanes
+query = "SELECT * FROM bike_lanes;"
+bike_lanes = gpd.read_postgis(query, engine, geom_col='geom')
+
+# demographics
+query = "SELECT * FROM demographics;"
+demographics = pd.read_sql(query, engine)
+
+# districts
+query = "SELECT * FROM districts;"
+districts = gpd.read_postgis(query, engine, geom_col='geom')
+
+# incomes
+query = "SELECT * FROM incomes;"
+incomes = pd.read_sql(query, engine)
+
+# demographics_projection
+query = "SELECT * FROM projected_population;"
+demographics_projection = pd.read_sql(query, engine)
+
+# cyclable_paths
+query = "SELECT * FROM cyclable_paths;"
+cyclable_paths = gpd.read_postgis(query, engine, geom_col='geom')
+
+# streets30
+query = "SELECT * FROM streets30;"
+streets30 = gpd.read_postgis(query, engine, geom_col='geom')
+
+# stations_status_t1
+query = "SELECT * FROM stations_status_t1;"
+stations_status_t1 = pd.read_sql(query, engine)
+
+# stations_intervals
+query = "SELECT * FROM stations_intervals;"
+stations_intervals = pd.read_sql(query, engine)
+
+# stations_intervals_30min
+query = "SELECT * FROM stations_intervals_30min;"
+stations_intervals_30min = pd.read_sql(query, engine)
