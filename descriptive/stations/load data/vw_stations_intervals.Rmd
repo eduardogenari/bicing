@@ -1,0 +1,25 @@
+---
+title: "calculate Area occupied by stations"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sf)
+library(dplyr)
+```
+
+# load data
+```{r}
+vw_stations_intervals_data <- readRDS("vw_stations_intervals_data.rds")
+```
+
+# convert to sf object
+```{r}
+
+# Print the first 10 lines
+print(head(vw_stations_intervals_data, 10))
+```
+

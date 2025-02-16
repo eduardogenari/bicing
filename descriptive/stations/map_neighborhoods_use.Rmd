@@ -1,0 +1,67 @@
+---
+title: "mapa stations use"
+author: "edu"
+date: "2025-02-01"
+output: html_document
+---
+
+# mapa stations use - clean FINAL
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load necessary libraries
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(grid)
+
+# Convert stations_info_use to sf object
+stations_sf <- st_as_sf(stations_info_use, coords = c("lon", "lat"), crs = 4326)
+
+# Perform spatial join to assign neighborhoods to stations
+stations_with_neighborhoods <- st_join(stations_sf, n_sf, join = st_within)
+
+# Calculate average use per neighborhood
+neighborhood_avg_use <- stations_with_neighborhoods %>%
+  group_by(neighborhood_name) %>%
+  summarize(avg_daily_use = mean(daily_avg_input_output, na.rm = TRUE))
+
+# Merge the average use data with the neighborhood polygons using a common identifier
+n_sf <- n_sf %>%
+  left_join(neighborhood_avg_use, by = "neighborhood_name")
+
+# Create a plot with avg_daily_use represented by a red color scale
+plot_neighborhood_avg_use <- ggplot() +
+  geom_sf(data = n_sf, aes(fill = avg_daily_use), color = "black", size = 0.2) +
+  scale_fill_gradient(low = "#FFCDD2", high = "#8B0000", name = "Avg Daily Use") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = "white"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  labs(
+    title = "Average Daily Use of Bicing Stations by Neighborhood in Barcelona"
+  ) +
+  annotation_custom(
+    grob = textGrob(
+      label = "Data source: Bicing and Barcelona Open Data",
+      x = unit(1, "npc") - unit(1, "lines"),
+      y = unit(0, "npc") + unit(1, "lines"),
+      just = c("right", "bottom"),
+      gp = gpar(fontsize = 8, col = "black")
+    )
+  )
+
+# Save the plot as a PNG file
+ggsave("neighborhood_avg_daily_use.png", plot = plot_neighborhood_avg_use, width = 10, height = 10, dpi = 300, bg = "white")
+
+# Save the plot as a JPG file
+ggsave("neighborhood_avg_daily_use.jpg", plot = plot_neighborhood_avg_use, width = 10, height = 10, dpi = 300, bg = "white")
+```
+
+
+
+
+
